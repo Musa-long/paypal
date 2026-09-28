@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Admin Dashboard</title>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f7fb;
+      color: #111827;
+    }
+
+    /* LOGIN */
+
+    .login-container {
+      width: 92%;
+      max-width: 450px;
+
+      margin: 80px auto;
+
+      background: white;
+
+      padding: 30px;
+
+      border-radius: 18px;
+
+      box-shadow:
+        0 8px 30px rgba(0,0,0,0.08);
+    }
+
+    .login-container h1 {
+      text-align: center;
+    }
+
+    input {
+      width: 100%;
+
+      padding: 14px;
+
+      margin-top: 15px;
+
+      border: 1px solid #d1d5db;
+
+      border-radius: 9px;
+
+      font-size: 16px;
+    }
+
+    button {
+      border: none;
+
+      padding: 13px 20px;
+
+      border-radius: 9px;
+
+      background: #2563eb;
+
+      color: white;
+
+      font-size: 15px;
+
+      cursor: pointer;
+    }
+
+    .login-button {
+      width: 100%;
+      margin-top: 15px;
+    }
+
+    #loginError {
+      color: #dc2626;
+      text-align: center;
+      margin-top: 12px;
+    }
+
+
+    /* ADMIN */
+
+    #adminPanel {
+      display: none;
+    }
+
+    .container {
+      width: 92%;
+      max-width: 1000px;
+
+      margin: 40px auto;
+    }
+
+    .header {
+      background: #111827;
+
+      color: white;
+
+      padding: 25px;
+
+      border-radius: 18px;
+
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      margin: 0;
+    }
+
+    .header-content {
+      display: flex;
+
+      justify-content: space-between;
+
+      align-items: center;
+
+      gap: 15px;
+    }
+
+    .logout {
+      background: #dc2626;
+    }
+
+    .message-card {
+      background: white;
+
+      padding: 25px;
+
+      border-radius: 16px;
+
+      box-shadow:
+        0 5px 20px rgba(0,0,0,0.06);
+    }
+
+    .label {
+      font-weight: bold;
+
+      color: #6b7280;
+
+      margin-bottom: 12px;
+    }
+
+    #liveMessage {
+      min-height: 150px;
+
+      padding: 18px;
+
+      background: #f9fafb;
+
+      border: 1px solid #e5e7eb;
+
+      border-radius: 12px;
+
+      white-space: pre-wrap;
+
+      word-break: break-word;
+
+      font-size: 18px;
+
+      line-height: 1.6;
+    }
+
+    #lastUpdated {
+      margin-top: 15px;
+
+      color: #6b7280;
+
+      font-size: 14px;
+    }
+
+    .clear {
+      background: #dc2626;
+
+      margin-top: 15px;
+    }
+
+    .status {
+      color: #16a34a;
+
+      font-size: 14px;
+
+      margin-top: 10px;
+    }
+
+    @media (max-width: 600px) {
+
+      .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .logout {
+        width: 100%;
+      }
+
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+
+  <!-- ============================= -->
+  <!-- LOGIN -->
+  <!-- ============================= -->
+
+  <div
+    class="login-container"
+    id="loginBox"
+  >
+
+    <h1>Admin Login</h1>
+
+    <input
+      type="password"
+      id="password"
+      placeholder="Enter admin password"
+      autocomplete="current-password"
+    >
+
+    <button
+      class="login-button"
+      onclick="login()"
+    >
+      Login
+    </button>
+
+    <div id="loginError"></div>
+
+  </div>
+
+
+  <!-- ============================= -->
+  <!-- ADMIN PANEL -->
+  <!-- ============================= -->
+
+  <div
+    class="container"
+    id="adminPanel"
+  >
+
+    <div class="header">
+
+      <div class="header-content">
+
+        <div>
+
+          <h1>Admin Dashboard</h1>
+
+          <p>
+            Live message
+          </p>
+
+        </div>
+
+        <button
+          class="logout"
+          onclick="logout()"
+        >
+          Logout
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <div class="message-card">
+
+      <div class="label">
+        Current text from the website
+      </div>
+
+      <div id="liveMessage">
+        Waiting for text...
+      </div>
+
+      <div id="lastUpdated">
+        Waiting for update...
+      </div>
+
+      <div
+        class="status"
+        id="connectionStatus"
+      >
+        Live connection active
+      </div>
+
+      <button
+        class="clear"
+        onclick="clearText()"
+      >
+        Clear Text
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <script>
+
+    // ========================================
+    // LOGIN
+    // ========================================
+
+    async function login() {
+
+      const password =
+        document.getElementById("password").value;
+
+      const error =
+        document.getElementById("loginError");
+
+
+      if (!password) {
+
+        error.textContent =
+          "Enter your password.";
+
+        return;
+
+      }
+
+
+      try {
+
+        const response =
+          await fetch("/api/admin-login", {
+
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+              password: password
+            })
+
+          });
+
+
+        const data =
+          await response.json();
+
+
+        if (data.success) {
+
+          sessionStorage.setItem(
+            "adminLoggedIn",
+            "true"
+          );
+
+          showAdmin();
+
+        } else {
+
+          error.textContent =
+            "Incorrect password.";
+
+        }
+
+      } catch (error) {
+
+        error.textContent =
+          "Could not connect to server.";
+
+      }
+
+    }
+
+
+    // ========================================
+    // SHOW ADMIN
+    // ========================================
+
+    function showAdmin() {
+
+      document.getElementById(
+        "loginBox"
+      ).style.display = "none";
+
+
+      document.getElementById(
+        "adminPanel"
+      ).style.display = "block";
+
+
+      loadLiveText();
+
+    }
+
+
+    // ========================================
+    // LOGOUT
+    // ========================================
+
+    function logout() {
+
+      sessionStorage.removeItem(
+        "adminLoggedIn"
+      );
+
+      location.reload();
+
+    }
+
+
+    // ========================================
+    // LOAD LIVE TEXT
+    // ========================================
+
+    async function loadLiveText() {
+
+      try {
+
+        const response =
+          await fetch("/api/live-text");
+
+
+        const data =
+          await response.json();
+
+
+        if (data.success) {
+
+          const message =
+            document.getElementById(
+              "liveMessage"
+            );
+
+
+          const updated =
+            document.getElementById(
+              "lastUpdated"
+            );
+
+
+          if (data.message) {
+
+            message.textContent =
+              data.message;
+
+          } else {
+
+            message.textContent =
+              "No text entered yet.";
+
+          }
+
+
+          if (data.updated_at) {
+
+            updated.textContent =
+              "Last updated: " +
+              new Date(
+                data.updated_at
+              ).toLocaleString();
+
+          }
+
+        }
+
+      } catch (error) {
+
+        document.getElementById(
+          "connectionStatus"
+        ).textContent =
+          "Connection error";
+
+      }
+
+    }
+
+
+    // ========================================
+    // AUTOMATIC ADMIN REFRESH
+    // ========================================
+
+    setInterval(function () {
+
+      if (
+        sessionStorage.getItem(
+          "adminLoggedIn"
+        ) === "true"
+      ) {
+
+        loadLiveText();
+
+      }
+
+    }, 1000);
+
+
+    // ========================================
+    // CLEAR TEXT
+    // ========================================
+
+    async function clearText() {
+
+      const confirmed =
+        confirm(
+          "Are you sure you want to clear the current text?"
+        );
+
+
+      if (!confirmed) {
+        return;
+      }
+
+
+      try {
+
+        const response =
+          await fetch("/api/clear-text", {
+
+            method: "POST"
+
+          });
+
+
+        const data =
+          await response.json();
+
+
+        if (data.success) {
+
+          loadLiveText();
+
+        }
+
+      } catch (error) {
+
+        alert(
+          "Unable to clear the text."
+        );
+
+      }
+
+    }
+
+
+    // ========================================
+    // CHECK EXISTING LOGIN
+    // ========================================
+
+    if (
+      sessionStorage.getItem(
+        "adminLoggedIn"
+      ) === "true"
+    ) {
+
+      showAdmin();
+
+    }
+
+  </script>
+
+</body>
+
+        </html>
