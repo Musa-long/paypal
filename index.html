@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Live Message</title>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f7fb;
+      color: #111827;
+    }
+
+    .container {
+      width: 92%;
+      max-width: 650px;
+      margin: 60px auto;
+    }
+
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 18px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+    }
+
+    .description {
+      text-align: center;
+      color: #6b7280;
+      margin-bottom: 25px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      resize: vertical;
+
+      padding: 16px;
+
+      border: 2px solid #d1d5db;
+      border-radius: 12px;
+
+      font-size: 17px;
+      font-family: Arial, sans-serif;
+
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: #2563eb;
+    }
+
+    #status {
+      text-align: center;
+      margin-top: 12px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <div class="container">
+
+    <div class="card">
+
+      <h1>Write Your Message</h1>
+
+      <p class="description">
+        Start typing in the box below.
+      </p>
+
+      <textarea
+        id="message"
+        placeholder="Write something here..."
+        autocomplete="off"
+      ></textarea>
+
+      <div id="status">
+        Ready
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <script>
+
+    const messageBox =
+      document.getElementById("message");
+
+    const status =
+      document.getElementById("status");
+
+    let saveTimer = null;
+
+
+    // ========================================
+    // LOAD EXISTING TEXT
+    // ========================================
+
+    async function loadExistingText() {
+
+      try {
+
+        const response =
+          await fetch("/api/live-text");
+
+        const data =
+          await response.json();
+
+        if (data.success) {
+
+          messageBox.value =
+            data.message || "";
+
+        }
+
+      } catch (error) {
+
+        console.error(error);
+
+      }
+
+    }
+
+
+    // ========================================
+    // AUTOMATICALLY SAVE WHILE TYPING
+    // ========================================
+
+    messageBox.addEventListener("input", function () {
+
+      status.textContent = "Saving...";
+
+      // Wait briefly before sending
+      // the latest text.
+
+      clearTimeout(saveTimer);
+
+      saveTimer = setTimeout(
+        saveText,
+        300
+      );
+
+    });
+
+
+    async function saveText() {
+
+      const message =
+        messageBox.value;
+
+      try {
+
+        const response =
+          await fetch("/api/live-text", {
+
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+              message: message
+            })
+
+          });
+
+
+        const data =
+          await response.json();
+
+
+        if (data.success) {
+
+          status.textContent =
+            "Saved automatically";
+
+        } else {
+
+          status.textContent =
+            "Unable to save";
+
+        }
+
+      } catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+          "Connection error";
+
+      }
+
+    }
+
+
+    // Load when page opens
+    loadExistingText();
+
+  </script>
+
+</body>
+
+</html>
